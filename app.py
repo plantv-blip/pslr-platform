@@ -314,7 +314,55 @@ HTML_TEMPLATE = '''
 
     <script>
         const { createApp } = Vue;
-        
+
+        // Three.js objects outside Vue reactivity
+        let threeScene, threeCamera, threeRenderer, threeSphere;
+
+        function init3D() {
+            const container = document.getElementById('canvas-3d');
+            if (!container) return;
+
+            threeScene = new THREE.Scene();
+            threeCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            threeCamera.position.z = 5;
+
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(threeRenderer.domElement);
+
+            const geometry = new THREE.SphereGeometry(2, 32, 32);
+            const material = new THREE.MeshNormalMaterial({ wireframe: false });
+            threeSphere = new THREE.Mesh(geometry, material);
+            threeScene.add(threeSphere);
+
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(10, 10, 10);
+            threeScene.add(light);
+
+            const controls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            controls.enableDamping = true;
+
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (threeSphere) {
+                threeSphere.rotation.x += 0.005;
+                threeSphere.rotation.y += 0.005;
+            }
+            if (threeRenderer && threeScene && threeCamera) {
+                threeRenderer.render(threeScene, threeCamera);
+            }
+        }
+
+        function updateSphere(pslr) {
+            if (threeSphere) {
+                const scale = (pslr.P + pslr.S + pslr.L + pslr.R) / 2;
+                threeSphere.scale.set(scale, scale, scale);
+            }
+        }
+
         createApp({
             data() {
                 return {
@@ -329,54 +377,17 @@ HTML_TEMPLATE = '''
                         total_models: 0
                     },
                     historyFilter: '',
-                    conceptFilter: '',
-                    scene: null,
-                    camera: null,
-                    renderer: null,
-                    sphere: null
+                    conceptFilter: ''
                 };
             },
-            
+
             mounted() {
-                this.init3D();
-                this.animate();
+                init3D();
                 this.loadStats();
                 this.loadHistory();
             },
-            
+
             methods: {
-                init3D() {
-                    const container = document.getElementById('canvas-3d');
-                    
-                    this.scene = new THREE.Scene();
-                    this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-                    this.camera.position.z = 5;
-                    
-                    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-                    this.renderer.setSize(container.clientWidth, container.clientHeight);
-                    container.appendChild(this.renderer.domElement);
-                    
-                    const geometry = new THREE.SphereGeometry(2, 32, 32);
-                    const material = new THREE.MeshNormalMaterial({ wireframe: false });
-                    this.sphere = new THREE.Mesh(geometry, material);
-                    this.scene.add(this.sphere);
-                    
-                    const light = new THREE.PointLight(0xffffff, 1, 100);
-                    light.position.set(10, 10, 10);
-                    this.scene.add(light);
-                    
-                    const controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-                    controls.enableDamping = true;
-                },
-                
-                animate() {
-                    requestAnimationFrame(this.animate);
-                    if (this.sphere) {
-                        this.sphere.rotation.x += 0.005;
-                        this.sphere.rotation.y += 0.005;
-                    }
-                    this.renderer.render(this.scene, this.camera);
-                },
                 
                 async loadStats() {
                     try {
@@ -411,7 +422,7 @@ HTML_TEMPLATE = '''
                         
                         if (result.success) {
                             this.results.unshift(result);
-                            this.updateSphere(result.result);
+                            updateSphere(result.result);
                             this.loadStats();
                         } else {
                             alert('분석 실패: ' + result.error);
@@ -428,17 +439,12 @@ HTML_TEMPLATE = '''
                         let url = '/api/history?limit=20';
                         if (this.historyFilter) url += `&model=${this.historyFilter}`;
                         if (this.conceptFilter) url += `&concept=${this.conceptFilter}`;
-                        
+
                         const response = await fetch(url);
                         this.results = await response.json();
                     } catch (error) {
                         console.error('Failed to load history:', error);
                     }
-                },
-                
-                updateSphere(pslr) {
-                    const scale = (pslr.P + pslr.S + pslr.L + pslr.R) / 2;
-                    this.sphere.scale.set(scale, scale, scale);
                 }
             }
         }).mount('#app');
