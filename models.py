@@ -39,7 +39,7 @@ class PSLRAnalysis(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     
     # Metadata (JSON for flexibility)
-    metadata = db.Column(JSON)
+    extra_data = db.Column(JSON)
     
     def to_dict(self):
         """Convert to dictionary for API response"""
