@@ -39,6 +39,10 @@ CORS(app, origins=app.config['CORS_ORIGINS'])
 db.init_app(app)
 migrate = Migrate(app, db)
 
+# Create tables on startup
+with app.app_context():
+    db.create_all()
+
 # Initialize PSLR Analyzer
 analyzer = PSLRAnalyzer()
 
