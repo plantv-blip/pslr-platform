@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pslr
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key}
+    depends_on:
+      - db
+    volumes:
+      - ./:/app
+    command: gunicorn app:app --bind 0.0.0.0:5000 --workers 4
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=pslr
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
