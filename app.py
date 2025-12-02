@@ -450,7 +450,10 @@ HTML_TEMPLATE = '''
 @app.route('/')
 def index():
     """Main page"""
-    return render_template_string(HTML_TEMPLATE)
+    try:
+        return render_template_string(HTML_TEMPLATE)
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 
 @app.route('/api/analyze', methods=['POST'])
